@@ -98,7 +98,7 @@ export default function Home() {
             Driver Status
           </h1>
 
-          {/* Centered bus track with offset start */}
+          {/* Centered bus track with percentage-based drive+fade */}
           <div className="relative w-full h-12 overflow-hidden mb-6">
             <div className="bus">
               <Image src="/bus.png" alt="Bus" width={48} height={48} />
@@ -210,20 +210,32 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Animation CSS */}
+      {/* Drive + fade animation uses only % values */}
       <style jsx>{`
         .bus {
           position: absolute;
           top: 50%;
-          left: 125px;              /* start 20px from the left edge */
+          left: 10%;                    
           transform: translateY(-50%);
-          animation: drive 4s linear infinite;
+          animation: move 2.75s linear infinite;
         }
-        @keyframes drive {
-          to {
-            transform:
-              translateX(calc(100% + 20px))  /* move all the way across plus offset */
-              translateY(-50%);
+        @keyframes move {
+          0% {
+            transform: translateY(-50%) translateX(0);
+            opacity: 0;
+          }
+          7.5% {
+            opacity: 0.5;
+          }
+          15% {
+            opacity: 1;
+          }
+          95% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-50%) translateX(400%);  /* move 120% of container */
+            opacity: 0;
           }
         }
       `}</style>
