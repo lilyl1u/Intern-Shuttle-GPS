@@ -2,20 +2,23 @@ import { NextResponse } from 'next/server';
 import { supabase }     from '@/lib/supabase';
 
 export async function POST(request: Request) {
-  const { id } = await request.json();
-  if (!id) {
-    return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
+  const { id, status } = await request.json();
+  if (!id || typeof status !== 'number') {
+    return NextResponse.json(
+      { error: 'Missing id or invalid status' },
+      { status: 400 }
+    );
   }
 
   const { data, error } = await supabase
     .from('onBoard')
-    .select('status')
+    .update({ status })
     .eq('id', id)
-    .single();
+    .select();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ status: data.status });
+  return NextResponse.json({ data });
 }
