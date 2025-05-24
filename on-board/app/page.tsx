@@ -71,46 +71,18 @@ export default function Home() {
   };
 
   const StatusDisplay = (
-    <div className="mt-6 text-center text-lg font-semibold" style={{ color: BRAND_RED_DARK }}>
+    <div className="mt-6 text-center text-xl font-semibold" style={{ color: BRAND_RED_DARK }}>
       {loading ? "Loading…" : currentStatus ? `Current Status: ${currentStatus}` : "No status set"}
     </div>
   );
 
-  const renderViewerStatusCircle = () => {
-    const imageSrc = driverKey === 0 || driverKey === 1 ? "/otw.png" : null;
-
-    return (
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-full flex justify-center">
-          <div
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-red-400 to-red-200 flex items-center justify-center shadow-inner overflow-hidden"
-            style={{ position: "relative" }}
-          >
-            {imageSrc ? (
-              <img
-                src={imageSrc}
-                alt="On the way"
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <span className="text-4xl">📍</span>
-            )}
-          </div>
-        </div>
-        <div className="text-center text-xl font-semibold text-red-700">
-          {loading ? "Loading..." : currentStatus ?? "No status"}
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
-      <main className="min-h-screen flex items-center justify-center relative overflow-hidden font-sans">
+      <main className="min-h-screen flex items-center justify-center relative overflow-hidden font-sans px-4">
         <div className="absolute inset-0 z-0 bg-gradient-to-b from-[#fff5f5] via-[#fbcfd4] to-[#fff5f5] animate-linear-gradient bg-[length:100%_200%]" />
         <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.08] grain-overlay" />
 
-        <div className="relative z-10 w-full max-w-md rounded-[2rem] shadow-2xl p-8" style={{ backgroundColor: CARD_BG }}>
+        <div className="relative z-10 w-full max-w-sm md:max-w-md rounded-[2rem] shadow-2xl p-8" style={{ backgroundColor: CARD_BG }}>
           <h1 className="text-4xl font-bold text-center mb-6 text-red-600">Driver Location</h1>
 
           <div className="relative w-full h-12 mb-8 overflow-hidden">
@@ -175,7 +147,29 @@ export default function Home() {
             </>
           )}
 
-          {mode === "viewer" && renderViewerStatusCircle()}
+          {mode === "viewer" && (
+            <>
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-full flex justify-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden relative bg-gradient-to-br from-red-400 to-red-200 shadow-inner">
+                  <img
+                    src={
+                      driverKey === 0 || driverKey === 1
+                        ? "/otw.png"
+                        : "/herePin.png"
+                    }
+                    alt="Bus"
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+
+                </div>
+                <div className="text-center text-2xl font-bold text-red-700">
+                  {loading ? "Loading..." : currentStatus ?? "No status"}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {mode !== "driver" && (
