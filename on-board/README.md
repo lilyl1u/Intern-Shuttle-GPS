@@ -35,20 +35,24 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-
 ## API Routes
+
 ### get driver status by id
+
 `http://localhost:3000/api/get-status`
+
 ```json
 {
-    "id": "faccaf3a-59f9-416d-a508-a7d0d891f70e"
+  "id": "faccaf3a-59f9-416d-a508-a7d0d891f70e"
 }
 ```
 
 ### change driver status
+
 `http://localhost:3000/api/get-status`
+
 ```json
 {
-    "id": "faccaf3a-59f9-416d-a508-a7d0d891f70e"
+  "id": "faccaf3a-59f9-416d-a508-a7d0d891f70e"
 }
 ```

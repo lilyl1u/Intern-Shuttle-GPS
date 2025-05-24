@@ -1,10 +1,10 @@
 // app/page.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from "react";
+import Image from "next/image";
 
-const DRIVER_ID = 'faccaf3a-59f9-416d-a508-a7d0d891f70e';
+const DRIVER_ID = "faccaf3a-59f9-416d-a508-a7d0d891f70e";
 const ACCESS_CODE = "1234";
 
 const STATUS_LABELS: Record<number, string> = {
@@ -20,7 +20,7 @@ const CARD_BG = "#FFFFFF";
 
 export default function Home() {
   const [mode, setMode] = useState<null | "driver" | "viewer">(null);
-  const [codeInput, setCodeInput] = useState('');
+  const [codeInput, setCodeInput] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [driverKey, setDriverKey] = useState<number | null>(null);
   const [currentStatus, setCurrentStatus] = useState<string | null>(null);
@@ -30,47 +30,58 @@ export default function Home() {
     setUnlocked(false);
     setDriverKey(null);
     setCurrentStatus(null);
-    setCodeInput('');
+    setCodeInput("");
   };
 
   useEffect(() => {
-    if (mode === 'driver' || mode === 'viewer') {
+    if (mode === "driver" || mode === "viewer") {
       setLoading(true);
-      fetch('/api/get-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: DRIVER_ID }),
-      })
-        .then(r => r.json())
-        .then(json => {
-          if (!json.error && typeof json.status === 'number') {
-            setDriverKey(json.status);
-            setCurrentStatus(STATUS_LABELS[json.status]);
-          }
+      const interval = setInterval(() => {
+        fetch("/api/get-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: DRIVER_ID }),
         })
-        .catch(console.error)
-        .finally(() => setLoading(false));
+          .then((r) => r.json())
+          .then((json) => {
+            if (!json.error && typeof json.status === "number") {
+              setDriverKey(json.status);
+              setCurrentStatus(STATUS_LABELS[json.status]);
+            }
+          })
+          .catch(console.error)
+          .finally(() => setLoading(false));
+      }, 1000);
+
+      return () => clearInterval(interval);
     }
   }, [mode]);
 
   const handleStatusChange = async (num: number) => {
     setDriverKey(num);
     setCurrentStatus(STATUS_LABELS[num]);
-    const res = await fetch('/api/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: DRIVER_ID, status: num }),
     });
     const json = await res.json();
     if (json.error) {
       console.error(json.error);
-      alert('Failed to update status');
+      alert("Failed to update status");
     }
   };
 
   const StatusDisplay = (
-    <div className="mt-6 text-center text-lg font-semibold" style={{ color: BRAND_RED_DARK }}>
-      {loading ? 'Loading…' : currentStatus ? `Current Status: ${currentStatus}` : 'No status set'}
+    <div
+      className="mt-6 text-center text-lg font-semibold"
+      style={{ color: BRAND_RED_DARK }}
+    >
+      {loading
+        ? "Loading…"
+        : currentStatus
+          ? `Current Status: ${currentStatus}`
+          : "No status set"}
     </div>
   );
 
@@ -84,8 +95,14 @@ export default function Home() {
         <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.08] grain-overlay" />
 
         {/* Card container */}
-        <div className="relative z-10 w-full max-w-md rounded-2xl shadow-2xl p-8" style={{ backgroundColor: CARD_BG }}>
-          <h1 className="text-4xl font-bold text-center mb-6" style={{ color: BRAND_RED }}>
+        <div
+          className="relative z-10 w-full max-w-md rounded-2xl shadow-2xl p-8"
+          style={{ backgroundColor: CARD_BG }}
+        >
+          <h1
+            className="text-4xl font-bold text-center mb-6"
+            style={{ color: BRAND_RED }}
+          >
             Driver Status
           </h1>
 
@@ -98,36 +115,38 @@ export default function Home() {
           {mode === null && (
             <div className="space-y-4">
               <button
-                onClick={() => (resetDriver(), setMode('driver'))}
+                onClick={() => (resetDriver(), setMode("driver"))}
                 className="w-full py-3 rounded-lg text-white font-semibold transition hover:brightness-110"
                 style={{
                   backgroundColor: BRAND_RED,
                   boxShadow: `0 4px 6px -1px ${BRAND_RED}88, 0 2px 4px -2px ${BRAND_RED}88`,
                 }}
               >
-                I'm a Driver
+                I&apos;m a Driver
               </button>
               <button
-                onClick={() => (resetDriver(), setMode('viewer'))}
+                onClick={() => (resetDriver(), setMode("viewer"))}
                 className="w-full py-3 rounded-lg font-semibold border border-gray-300 text-gray-800 transition-transform transform hover:-translate-y-0.5 hover:shadow-md hover:bg-gray-100"
               >
-                I'm a Viewer
+                I&apos;m a Viewer
               </button>
             </div>
           )}
 
-          {mode === 'driver' && !unlocked && (
+          {mode === "driver" && !unlocked && (
             <>
               <input
                 type="password"
                 value={codeInput}
-                onChange={e => setCodeInput(e.target.value)}
+                onChange={(e) => setCodeInput(e.target.value)}
                 placeholder="Enter Access Code"
                 className="w-full p-3 mb-4 border border-gray-300 rounded-lg text-center text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-200"
               />
               <button
                 onClick={() =>
-                  codeInput === ACCESS_CODE ? setUnlocked(true) : alert('Wrong access code!')
+                  codeInput === ACCESS_CODE
+                    ? setUnlocked(true)
+                    : alert("Wrong access code!")
                 }
                 className="w-full py-3 rounded-lg text-white font-semibold transition hover:brightness-110"
                 style={{
@@ -147,7 +166,7 @@ export default function Home() {
             </>
           )}
 
-          {mode === 'driver' && unlocked && (
+          {mode === "driver" && unlocked && (
             <>
               <div className="space-y-3">
                 {Object.entries(STATUS_LABELS).map(([key, label]) => {
@@ -159,12 +178,12 @@ export default function Home() {
                       onClick={() => handleStatusChange(num)}
                       className="w-full py-3 rounded-lg font-semibold transition hover:scale-[1.01]"
                       style={{
-                        backgroundColor: isActive ? BRAND_RED : '#F0F0F0',
-                        color: isActive ? CARD_BG : '#333',
+                        backgroundColor: isActive ? BRAND_RED : "#F0F0F0",
+                        color: isActive ? CARD_BG : "#333",
                         boxShadow: isActive
                           ? `0 4px 6px -1px ${BRAND_RED}88, 0 2px 4px -2px ${BRAND_RED}88`
                           : undefined,
-                        border: isActive ? 'none' : '1px solid #ddd',
+                        border: isActive ? "none" : "1px solid #ddd",
                       }}
                     >
                       {label}
@@ -182,7 +201,7 @@ export default function Home() {
             </>
           )}
 
-          {mode === 'viewer' && (
+          {mode === "viewer" && (
             <>
               {StatusDisplay}
               <button
@@ -242,10 +261,13 @@ export default function Home() {
         }
 
         .grain-overlay {
-          background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+          background-image:
+            radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
             radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
           background-size: 3px 3px;
-          background-position: 0 0, 1.5px 1.5px;
+          background-position:
+            0 0,
+            1.5px 1.5px;
         }
       `}</style>
     </>
