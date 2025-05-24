@@ -12,6 +12,7 @@
     "@supabase/supabase-js": "^2.49.8",
     "next": "15.1.8",
     "react": "^19.0.0",
+    "react-circular-progressbar": "^2.2.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
