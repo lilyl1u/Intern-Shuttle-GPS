@@ -1,9 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+
+// ⬇ Dynamically import with SSR disabled
+const DriverMap = dynamic(() => import('./DriverMap'), {
+  ssr: false
+});
 
 const DRIVER_ID = "faccaf3a-59f9-416d-a508-a7d0d891f70e";
 const ACCESS_CODE = "1234";
+const WSU_COORDS = { lat: 42.35683822631836, lng: -83.07303619384766 };
+const OCM_COORDS = { lat: 42.332628, lng: -83.0467201 };
+const LOCATION_RADIUS_METERS = 80;
 
 const STATUS_LABELS: Record<number, string> = {
   0: "On the way to OCM",
@@ -15,6 +24,19 @@ const STATUS_LABELS: Record<number, string> = {
 const BRAND_RED = "#E03C31";
 const BRAND_RED_DARK = "#B52A2A";
 const CARD_BG = "#FFFFFF";
+
+function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371000;
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 export default function Home() {
   const [mode, setMode] = useState<"driver" | "viewer">("viewer");
@@ -55,20 +77,51 @@ export default function Home() {
     }
   }, [mode]);
 
-  const handleStatusChange = async (num: number) => {
-    setDriverKey(num);
-    setCurrentStatus(STATUS_LABELS[num]);
-    const res = await fetch("/api/update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: DRIVER_ID, status: num }),
-    });
-    const json = await res.json();
-    if (json.error) {
-      console.error(json.error);
-      alert("Failed to update status");
-    }
-  };
+  useEffect(() => {
+  if (mode === "driver" && unlocked && navigator.geolocation) {
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        let newStatus: number;
+
+        const distToWSU = getDistanceMeters(latitude, longitude, WSU_COORDS.lat, WSU_COORDS.lng);
+        const distToOCM = getDistanceMeters(latitude, longitude, OCM_COORDS.lat, OCM_COORDS.lng);
+
+        if (distToWSU < LOCATION_RADIUS_METERS) {
+          newStatus = 3;
+        } else if (distToOCM < LOCATION_RADIUS_METERS) {
+          newStatus = 2;
+        } else if (distToWSU < distToOCM) {
+          newStatus = 1;
+        } else {
+          newStatus = 0;
+        }
+
+        if (newStatus !== driverKey) {
+          setDriverKey(newStatus);
+          setCurrentStatus(STATUS_LABELS[newStatus]);
+
+        fetch("/api/get-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: DRIVER_ID }),
+        })
+
+            .then((res) => res.json())
+            .then((data) =>
+              console.log("✅ Updated backend with status:", newStatus, data)
+            )
+            .catch((err) => console.error("❌ Update error:", err));
+        }
+      },
+      console.error,
+      { enableHighAccuracy: true }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }
+}, [mode, unlocked, driverKey]);
+
 
   const StatusDisplay = (
     <div className="mt-6 text-center text-xl font-semibold" style={{ color: BRAND_RED_DARK }}>
@@ -101,9 +154,7 @@ export default function Home() {
                 className="w-full p-3 mb-4 border border-red-200 rounded-xl text-center text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-300"
               />
               <button
-                onClick={() =>
-                  codeInput === ACCESS_CODE ? setUnlocked(true) : alert("Wrong access code!")
-                }
+                onClick={() => codeInput === ACCESS_CODE ? setUnlocked(true) : alert("Wrong access code!")}
                 className="w-full py-3 rounded-xl text-white font-semibold bg-red-600 shadow-md hover:brightness-110 transition"
               >
                 Unlock Driver Panel
@@ -120,24 +171,15 @@ export default function Home() {
 
           {mode === "driver" && unlocked && (
             <>
-              <div className="space-y-3">
-                {Object.entries(STATUS_LABELS).map(([key, label]) => {
-                  const num = +key;
-                  const isActive = driverKey === num;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => handleStatusChange(num)}
-                      className={`w-full py-3 rounded-full font-semibold transition-all duration-200 ${
-                        isActive ? "bg-red-500 text-white shadow-lg" : "bg-red-100 text-red-800 hover:bg-red-200"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+              <div className="text-sm text-center text-gray-600 mb-4">
+                Location is being automatically tracked.
               </div>
               {StatusDisplay}
+
+              <div className="my-6">
+                <DriverMap />
+              </div>
+
               <button
                 onClick={() => (resetDriver(), setMode("viewer"))}
                 className="mt-6 block mx-auto text-sm font-medium text-gray-800 hover:text-black hover:scale-[1.02] transition-transform duration-200"
@@ -151,22 +193,25 @@ export default function Home() {
             <>
               <div className="flex flex-col items-center gap-4">
                 <div className="w-full flex justify-center">
-                <div className="w-24 h-24 rounded-full overflow-hidden relative bg-gradient-to-br from-red-400 to-red-200 shadow-inner">
-                  <img
-                    src={
-                      driverKey === 0 || driverKey === 1
-                        ? "/otw.png"
-                        : "/herePin.png"
-                    }
-                    alt="Bus"
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                </div>
-
+                  <div className="w-24 h-24 rounded-full overflow-hidden relative bg-gradient-to-br from-red-400 to-red-200 shadow-inner">
+                    <img
+                      src={
+                        driverKey === 0 || driverKey === 1
+                          ? "/otw.png"
+                          : "/herePin.png"
+                      }
+                      alt="Bus"
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  </div>
                 </div>
                 <div className="text-center text-2xl font-bold text-red-700">
                   {loading ? "Loading..." : currentStatus ?? "No status"}
                 </div>
+              </div>
+
+              <div className="my-6">
+                <DriverMap />
               </div>
             </>
           )}
